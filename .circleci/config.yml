@@ -11,11 +11,18 @@ jobs:
           command: |
             curl -sL https://deb.nodesource.com/setup_6.x | bash -
             apt-get install -y nodejs
+      - restore_cache:
+          key: deps-{{ .Branch }}-{{ checksum "package.json" }}-{{ checksum "Fable.Import.Google.Cloud.PubSub.fsproj" }}
       - run:
           name: Restore dependencies
           command: |
             npm install
             dotnet restore
+      - save_cache:
+          key: deps-{{ .Branch }}-{{ checksum "package.json" }}-{{ checksum "Fable.Import.Google.Cloud.PubSub.fsproj" }}
+          paths:
+            - "node_modules"
+            - "~/.nuget"
       - run:
           name: Run tests
           command: dotnet fable npm-run test
