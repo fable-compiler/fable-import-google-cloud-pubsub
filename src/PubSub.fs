@@ -4,6 +4,7 @@ open System
 open Fable.Core
 open Fable.Core.JsInterop
 open Fable.Import
+open Fable.PowerPack
 
 open FSharp.Data.UnitSystems.SI.UnitNames
 
@@ -11,14 +12,6 @@ type [<Erase>] TopicName = TopicName of string
 type [<Erase>] SubscriptionName = SubscriptionName of string
 type [<Erase>] AckId = AckId of string
 type [<Erase>] MessageId = MessageId of string
-
-type GetSnapshotsOptions =
-  { autoPaginate: bool option
-    maxApiCalls: int option
-    maxResults: int option
-    pageSize: int option
-    pageToken: string option
-  }
 
 type SubscribeOptions =
   { ackDeadlineSeconds : int<second> option
@@ -38,6 +31,10 @@ type SubscriptionOptions =
 
 type TopicGetOptions =
   { autoCreate: bool }
+
+module TopicGetOptions =
+  let withAutoCreate =
+    { autoCreate = true }
 
 type PublishOptions =
   { raw: bool
@@ -71,13 +68,13 @@ type Options =
     keyFilename: string option
     apiEndpoint: string option }
 
-module pubsub_types =
-  type ApiResponse = interface end
+type ApiResponse = interface end
 
+module JsInterop =
   type Subscription =
     abstract ack: [<ParamArray>] ackIds: AckId[] * ?options: AckOptions -> JS.Promise<unit>
-    abstract on: eventType:string -> listener:('a -> unit) -> unit
-    abstract removeListener: eventType: string -> listener: ('a -> unit) -> unit
+    abstract on: eventType:string * listener:('a -> unit) -> unit
+    abstract removeListener: eventType: string * listener: ('a -> unit) -> unit
     abstract pull: ?options:PullOptions -> JS.Promise<Message[] * ApiResponse>
 
   type Topic =
@@ -86,15 +83,50 @@ module pubsub_types =
     abstract publish: [<ParamArray>] message: 'a[] * ?options: PublishOptions -> JS.Promise<MessageId[] * ApiResponse>
     abstract subscribe: ?subName: SubscriptionName * ?options: SubscribeOptions -> JS.Promise<Subscription * ApiResponse>
 
-  type PubSub =
+  type PubSubConnection =
     abstract createTopic: topicName: TopicName -> JS.Promise<Topic * ApiResponse>
     abstract subscribe: topic: U2<Topic,TopicName> * ?subName: SubscriptionName * ?options: SubscribeOptions -> JS.Promise<Subscription * ApiResponse>
     abstract subscription: ?name: SubscriptionName * ?options: SubscriptionOptions -> Subscription
     abstract topic: name: TopicName -> Topic
 
-  type Globals =
+  type PubSubProvider =
     [<Emit("$0($1)")>]
-    abstract Init : ?options:Options -> PubSub
+    abstract Init : ?options:Options -> PubSubConnection
 
-[<Import("default","@google-cloud/pubsub")>]
-let pubsub: pubsub_types.Globals = jsNative
+  [<Import("default","@google-cloud/pubsub")>]
+  let pubsub: PubSubProvider = jsNative
+
+type [<Erase>] PubSub = PubSub of JsInterop.PubSubConnection
+type [<Erase>] Topic = Topic of JsInterop.Topic
+type [<Erase>] Subscription = Subscription of JsInterop.Subscription
+
+module PubSub =
+  let init () =
+    JsInterop.pubsub.Init()
+    |> PubSub
+  let initWithOpts opts =
+    JsInterop.pubsub.Init(opts)
+    |> PubSub
+
+  let topic topicName (PubSub pubsub) =
+    pubsub.topic(topicName)
+    |> Topic
+
+module Topic =
+  let exists (Topic topic) = topic.exists()
+  let get (Topic topic) = topic.get() |> Promise.map (fun (t,x) -> Topic t, x)
+  let ensureExists (Topic topic) = topic.get(TopicGetOptions.withAutoCreate) |> Promise.map (fun (t,x) -> Topic t, x)
+  let publish (Topic topic) (msg : 'a) = topic.publish([|msg|])
+  let publishWithOptions (Topic topic) (msg : 'a) opts = topic.publish([|msg|], opts)
+  let publishBulk (Topic topic) (msg : 'a[]) = topic.publish(msg)
+  let publishBulkWithOptions (Topic topic) (msg : 'a[]) opts = topic.publish(msg, opts)
+  let subscribeAnonymous (Topic topic) = topic.subscribe() |> Promise.map (fun (s,x) -> Subscription s, x)
+  let subscribeAnonymousWithOptions (Topic topic) opts = topic.subscribe(options=opts) |> Promise.map (fun (s,x) -> Subscription s, x)
+  let subscribe (Topic topic) sn = topic.subscribe(subName=sn) |> Promise.map (fun (s,x) -> Subscription s, x)
+  let subscribeWithOptions (Topic topic) sn opts = topic.subscribe(sn, opts) |> Promise.map (fun (s,x) -> Subscription s, x)
+
+module Subscription =
+  let ack (Subscription sub) ackId = sub.ack([|ackId|])
+  let ackBulk (Subscription sub) ackIds = sub.ack(ackIds)
+  let pull (Subscription sub) = sub.pull()
+  let pullWithOptions (Subscription sub) opts = sub.pull(opts)

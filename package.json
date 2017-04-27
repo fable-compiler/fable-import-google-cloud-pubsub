@@ -32,6 +32,7 @@
     "fable-core": "^1.0.0-narumi-910",
     "fable-import-google-cloud": "^0.1.0",
     "fable-loader": "^1.0.0-narumi-912",
+    "fable-powerpack": "^1.0.0-narumi-5",
     "mocha": "^3.2.0",
     "webpack": "^2.2.1",
     "webpack-node-externals": "^1.5.4"
