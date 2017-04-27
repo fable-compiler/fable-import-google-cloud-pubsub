@@ -3,9 +3,14 @@ jobs:
   build:
     working_directory: ~/circulate
     docker:
-      - image: neoeinstein/fable
+      - image: microsoft/dotnet:1.1-sdk
     steps:
       - checkout
+      - run:
+          name: Install Node.JS
+          command: |
+            curl -sL https://deb.nodesource.com/setup_6.x | bash -
+            apt-get install -y nodejs
       - run:
           name: Restore dependencies
           command: |
