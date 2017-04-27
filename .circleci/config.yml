@@ -7,7 +7,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install Node.JS
+          name: Install Node.JS 6.x
           command: |
             curl -sL https://deb.nodesource.com/setup_6.x | bash -
             apt-get install -y nodejs
@@ -26,3 +26,6 @@ jobs:
       - run:
           name: Run tests
           command: dotnet fable npm-run test
+      - store_artifacts:
+          path: build/
+          destination: build
