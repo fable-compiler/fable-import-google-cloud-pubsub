@@ -1,0 +1,16 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/circulate
+    docker:
+      - image: neoeinstein/fable
+    steps:
+      - checkout
+      - run:
+          name: Restore dependencies
+          command: |
+            npm install
+            dotnet restore
+      - run:
+          name: Run tests
+          command: dotnet fable npm-run test
