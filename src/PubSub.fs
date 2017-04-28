@@ -68,8 +68,6 @@ type Options =
     keyFilename: string option
     apiEndpoint: string option }
 
-type ApiResponse = interface end
-
 module JsInterop =
   type Subscription =
     abstract ack: [<ParamArray>] ackIds: AckId[] * ?options: AckOptions -> JS.Promise<unit>
