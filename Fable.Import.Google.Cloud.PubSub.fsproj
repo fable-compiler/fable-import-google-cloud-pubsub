@@ -10,7 +10,12 @@
     <PackageReference Include="FSharp.Core" Version="4.1.*" />
     <PackageReference Include="Fable.Core" Version="1.0.0-narumi-*" />
     <DotNetCliToolReference Include="dotnet-fable" Version="1.0.0-narumi-*" />
-    <ProjectReference Include="node_modules/fable-import-google-cloud/Fable.Import.Google.Cloud.fsproj" />
+  </ItemGroup>
+  <ItemGroup Condition="!$(MSBuildThisFileDirectory.Contains('node_modules'))">
+      <ProjectReference Include="node_modules\fable-import-google-cloud\Fable.Import.Google.Cloud.fsproj" />
+  </ItemGroup>
+  <ItemGroup Condition="$(MSBuildThisFileDirectory.Contains('node_modules'))">
+      <ProjectReference Include="..\fable-import-google-cloud\Fable.Import.Google.Cloud.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="node_modules\fable-powerpack\Fable.PowerPack.fsproj" />
