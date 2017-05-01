@@ -23,6 +23,7 @@ let inline it name (tests : unit -> unit) = m.it(name, tests)
 let inline itWithCallback name (tests : (unit -> unit) -> unit) = m.it(name, tests)
 let inline itPromises name (tests : unit -> JS.Promise<_>) = m.it(name, tests)
 
+let undef<'a> = Unchecked.defaultof<'a>
 
 module Promise =
   [<Emit("Promise.resolve($0)")>]

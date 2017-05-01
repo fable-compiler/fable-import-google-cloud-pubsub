@@ -19,16 +19,19 @@ let tests () =
       it "nonBlocking returns immediately" <| fun () ->
         Assert.strictEqual(PullOptions.nonBlocking.returnImmediately, Some true)
     describe "Topic" <| fun _ ->
+      let mockTopic exists get publish subscribe =
+        { new JsInterop.Topic with
+            member __.exists () = exists
+            member __.get (?opts) = get opts
+            member __.publish (msgs,?opts) = publish (unbox <| box <| msgs) opts
+            member __.subscribe (?subName,?opts) = subscribe subName opts }
       describe "exists" <| fun _ ->
+        let makeMock exists apiResp =
+          mockTopic (Promise.lift (exists, apiResp)) undef undef undef
         itPromises "returns expected result when wrapped topic does not exist" <| fun () ->
           let expectedApiResp = { new ApiResponse }
           let expectedResult = false
-          let mockTopic =
-            { new JsInterop.Topic with
-                member __.exists () = Promise.lift (expectedResult, expectedApiResp)
-                member __.get (?opts) = Unchecked.defaultof<_>
-                member __.publish (msgs,?opts) = Unchecked.defaultof<_>
-                member __.subscribe (?subName,?opts) = Unchecked.defaultof<_> }
+          let mockTopic = makeMock expectedResult expectedApiResp
           let testTopic = Topic mockTopic
           Topic.exists testTopic
           |> Promise.map (fun (res, apiResp) ->
@@ -38,12 +41,7 @@ let tests () =
         itPromises "returns expected result when wrapped topic exists" <| fun () ->
           let expectedApiResp = { new ApiResponse }
           let expectedResult = true
-          let mockTopic =
-            { new JsInterop.Topic with
-                member __.exists () = Promise.lift (expectedResult, expectedApiResp)
-                member __.get (?opts) = Unchecked.defaultof<_>
-                member __.publish (msgs,?opts) = Unchecked.defaultof<_>
-                member __.subscribe (?subName,?opts) = Unchecked.defaultof<_> }
+          let mockTopic = makeMock expectedResult expectedApiResp
           let testTopic = Topic mockTopic
           Topic.exists testTopic
           |> Promise.map (fun (res, apiResp) ->
@@ -51,23 +49,16 @@ let tests () =
             Assert.strictEqual(apiResp, expectedApiResp)
           )
       describe "get" <| fun _ ->
+        let makeMock getFun =
+          mockTopic undef getFun undef undef
         itPromises "returns a wrapped topic from internal get call with no options" <| fun () ->
           let expectedApiResp = { new ApiResponse }
-          let expectedInnerTopic =
-            { new JsInterop.Topic with
-                member __.exists () = Unchecked.defaultof<_>
-                member __.get (?opts) = Unchecked.defaultof<_>
-                member __.publish (msgs,?opts) = Unchecked.defaultof<_>
-                member __.subscribe (?subName,?opts) = Unchecked.defaultof<_> }
-          let mockTopic =
-            { new JsInterop.Topic with
-                member __.exists () = Unchecked.defaultof<_>
-                member __.get (?opts) =
-                  if opts = None then
-                    Promise.lift (expectedInnerTopic, expectedApiResp)
-                  else Unchecked.defaultof<_>
-                member __.publish (msgs,?opts) = Unchecked.defaultof<_>
-                member __.subscribe (?subName,?opts) = Unchecked.defaultof<_> }
+          let expectedInnerTopic = mockTopic undef undef undef undef
+          let mockGetFun opts =
+            if opts = None then
+              Promise.lift (expectedInnerTopic, expectedApiResp)
+            else Unchecked.defaultof<_>
+          let mockTopic = makeMock mockGetFun
           let testTopic = Topic mockTopic
           let expectedTopic = Topic expectedInnerTopic
           Topic.get testTopic
@@ -76,23 +67,17 @@ let tests () =
             Assert.strictEqual(apiResp, expectedApiResp)
           )
       describe "ensureExists" <| fun _ ->
+        let makeMock getFun =
+          mockTopic undef getFun undef undef
         itPromises "returns a wrapped topic from internal get call with auto-create" <| fun () ->
           let expectedApiResp = { new ApiResponse }
-          let expectedInnerTopic =
-            { new JsInterop.Topic with
-                member __.exists () = Unchecked.defaultof<_>
-                member __.get (?opts) = Unchecked.defaultof<_>
-                member __.publish (msgs,?opts) = Unchecked.defaultof<_>
-                member __.subscribe (?subName,?opts) = Unchecked.defaultof<_> }
-          let mockTopic =
-            { new JsInterop.Topic with
-                member __.exists () = Unchecked.defaultof<_>
-                member __.get (?opts) =
-                  if opts = Some TopicGetOptions.withAutoCreate then
-                    Promise.lift (expectedInnerTopic, expectedApiResp)
-                  else Unchecked.defaultof<_>
-                member __.publish (msgs,?opts) = Unchecked.defaultof<_>
-                member __.subscribe (?subName,?opts) = Unchecked.defaultof<_> }
+          let expectedInnerTopic = mockTopic undef undef undef undef
+          let mockGetFun opts =
+            match opts with
+            | Some { autoCreate = ac } when ac = true ->
+              Promise.lift (expectedInnerTopic, expectedApiResp)
+            | _ -> undef
+          let mockTopic = makeMock mockGetFun
           let testTopic = Topic mockTopic
           let expectedTopic = Topic expectedInnerTopic
           Topic.ensureExists testTopic
