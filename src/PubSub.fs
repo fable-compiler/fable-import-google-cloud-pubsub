@@ -4,7 +4,6 @@ open System
 open Fable.Core
 open Fable.Core.JsInterop
 open Fable.Import
-open Fable.PowerPack
 
 open FSharp.Data.UnitSystems.SI.UnitNames
 
@@ -111,6 +110,10 @@ module PubSub =
     |> Topic
 
 module Topic =
+  module private Promise =
+      [<Emit("$1.then($0)")>]
+      let map (a: 'T->'R) (pr: JS.Promise<'T>): JS.Promise<'R> = jsNative
+
   let exists (Topic topic) = topic.exists()
   let get (Topic topic) = topic.get() |> Promise.map (fun (t,x) -> Topic t, x)
   let ensureExists (Topic topic) = topic.get(TopicGetOptions.withAutoCreate) |> Promise.map (fun (t,x) -> Topic t, x)
