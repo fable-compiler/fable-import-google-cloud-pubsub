@@ -119,17 +119,17 @@ module Topic =
   let get (Topic topic) = topic.get() |> Promise.map (fun (t,x) -> Topic t, x)
   let getName (Topic topic) = topic.name
   let ensureExists (Topic topic) = topic.get(TopicGetOptions.withAutoCreate) |> Promise.map (fun (t,x) -> Topic t, x)
-  let publish (Topic topic) (msg : 'a) = topic.publish([|msg|])
-  let publishWithOptions (Topic topic) (msg : 'a) opts = topic.publish([|msg|], opts)
-  let publishBulk (Topic topic) (msg : 'a[]) = topic.publish(msg)
-  let publishBulkWithOptions (Topic topic) (msg : 'a[]) opts = topic.publish(msg, opts)
+  let publishOne (Topic topic) (msg : 'a) = topic.publish([|msg|])
+  let publishOneWithOptions (Topic topic) (msg : 'a) opts = topic.publish([|msg|], opts)
+  let publish (Topic topic) (msg : 'a[]) = topic.publish(msg)
+  let publishWithOptions (Topic topic) (msg : 'a[]) opts = topic.publish(msg, opts)
   let subscribeAnonymous (Topic topic) = topic.subscribe() |> Promise.map (fun (s,x) -> Subscription s, x)
   let subscribeAnonymousWithOptions (Topic topic) opts = topic.subscribe(options=opts) |> Promise.map (fun (s,x) -> Subscription s, x)
   let subscribe (Topic topic) sn = topic.subscribe(subName=sn) |> Promise.map (fun (s,x) -> Subscription s, x)
   let subscribeWithOptions (Topic topic) sn opts = topic.subscribe(sn, opts) |> Promise.map (fun (s,x) -> Subscription s, x)
 
 module Subscription =
-  let ack (Subscription sub) ackId = sub.ack([|ackId|])
-  let ackBulk (Subscription sub) ackIds = sub.ack(ackIds)
+  let ackOne (Subscription sub) ackId = sub.ack([|ackId|])
+  let ack (Subscription sub) ackIds = sub.ack(ackIds)
   let pull (Subscription sub) = sub.pull()
   let pullWithOptions (Subscription sub) opts = sub.pull(opts)

@@ -1,3 +1,7 @@
+### 0.3.0
+
+* Rename publish/ack functions
+
 ### 0.2.2
 
 * Add getName for Topic
