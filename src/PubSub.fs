@@ -79,6 +79,7 @@ module JsInterop =
     abstract get: ?options:TopicGetOptions -> JS.Promise<Topic * ApiResponse>
     abstract publish: [<ParamArray>] message: 'a[] * ?options: PublishOptions -> JS.Promise<MessageId[] * ApiResponse>
     abstract subscribe: ?subName: SubscriptionName * ?options: SubscribeOptions -> JS.Promise<Subscription * ApiResponse>
+    abstract name: TopicName with get
 
   type PubSubConnection =
     abstract createTopic: topicName: TopicName -> JS.Promise<Topic * ApiResponse>
@@ -116,6 +117,7 @@ module Topic =
 
   let exists (Topic topic) = topic.exists()
   let get (Topic topic) = topic.get() |> Promise.map (fun (t,x) -> Topic t, x)
+  let getName (Topic topic) = topic.name
   let ensureExists (Topic topic) = topic.get(TopicGetOptions.withAutoCreate) |> Promise.map (fun (t,x) -> Topic t, x)
   let publish (Topic topic) (msg : 'a) = topic.publish([|msg|])
   let publishWithOptions (Topic topic) (msg : 'a) opts = topic.publish([|msg|], opts)

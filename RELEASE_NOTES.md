@@ -1,3 +1,7 @@
+### 0.2.2
+
+* Add getName for Topic
+
 ### 0.2.1
 
 * Fix for transitive dependency search
